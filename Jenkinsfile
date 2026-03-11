@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        PHP_IMAGE = 'shippingdocker/php-composer:7.4'
+        APP_ENV = 'development'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -10,28 +15,44 @@ pipeline {
 
         stage('Build / Install Dependencies') {
             steps {
-                sh 'composer install --no-interaction --prefer-dist --optimize-autoloader'
+                script {
+                    docker.image(env.PHP_IMAGE).inside('-u root') {
+                        sh 'composer install --no-interaction --prefer-dist --optimize-autoloader'
+                    }
+                }
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh './vendor/bin/phpunit'
+                script {
+                    docker.image(env.PHP_IMAGE).inside('-u root') {
+                        sh './vendor/bin/phpunit'
+                    }
+                }
             }
         }
 
         stage('Database Migration') {
             steps {
-                sh 'php artisan migrate --force'
+                script {
+                    docker.image(env.PHP_IMAGE).inside('-u root') {
+                        sh 'php artisan migrate --force'
+                    }
+                }
             }
         }
 
         stage('Cache Clear') {
             steps {
-                sh 'php artisan config:clear'
-                sh 'php artisan route:clear'
-                sh 'php artisan cache:clear'
-                sh 'php artisan view:clear'
+                script {
+                    docker.image(env.PHP_IMAGE).inside('-u root') {
+                        sh 'php artisan config:clear'
+                        sh 'php artisan route:clear'
+                        sh 'php artisan cache:clear'
+                        sh 'php artisan view:clear'
+                    }
+                }
             }
         }
 
