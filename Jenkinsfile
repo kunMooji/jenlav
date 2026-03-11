@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        APP_IMAGE = 'php:7.4-cli'    // image PHP untuk composer
+        APP_IMAGE = 'composer:2'    // image PHP untuk composer
     }
 
     stages {
