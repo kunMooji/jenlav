@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        APP_IMAGE = 'composer:2'    // image PHP untuk composer
+        COMPOSER_IMAGE = 'composer:2'
+        PHP_IMAGE = 'php:8.2-cli'
     }
 
     stages {
@@ -16,9 +17,11 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 script {
-                    docker.image(APP_IMAGE).inside('-u root') {
+                    docker.image(COMPOSER_IMAGE).inside('-u root --entrypoint=') {
                         sh '''
                             composer install --no-interaction --prefer-dist --optimize-autoloader
+                            cp .env.example .env
+                            php artisan key:generate
                         '''
                     }
                 }
@@ -28,7 +31,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    docker.image(APP_IMAGE).inside('-u root') {
+                    docker.image(COMPOSER_IMAGE).inside('-u root --entrypoint=') {
                         sh 'php artisan test'
                     }
                 }
@@ -38,7 +41,7 @@ pipeline {
         stage('Database Migration') {
             steps {
                 script {
-                    docker.image(APP_IMAGE).inside('-u root') {
+                    docker.image(COMPOSER_IMAGE).inside('-u root --entrypoint=') {
                         sh 'php artisan migrate --force'
                     }
                 }
@@ -48,9 +51,11 @@ pipeline {
         stage('Cache Clear') {
             steps {
                 script {
-                    docker.image(APP_IMAGE).inside('-u root') {
-                        sh 'php artisan cache:clear'
-                        sh 'php artisan config:clear'
+                    docker.image(COMPOSER_IMAGE).inside('-u root --entrypoint=') {
+                        sh '''
+                            php artisan cache:clear
+                            php artisan config:clear
+                        '''
                     }
                 }
             }
