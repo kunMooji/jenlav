@@ -54,18 +54,22 @@ pipeline {
             }
         }
 
-        stage('Cache Clear') {
-            steps {
-                script {
-                    docker.image(COMPOSER_IMAGE).inside('-u root --entrypoint=') {
-                        sh '''
-                            php artisan cache:clear
-                            php artisan config:clear
-                        '''
-                    }
-                }
+       stage('Cache Clear') {
+    steps {
+        script {
+            docker.image('laravelphp/vapor:php82').inside('-u root --entrypoint= --network jenkins-net') {
+                sh '''
+                    sed -i "s/DB_HOST=.*/DB_HOST=mysql-jenkins/" .env
+                    sed -i "s/DB_DATABASE=.*/DB_DATABASE=jenlav/" .env
+                    sed -i "s/DB_USERNAME=.*/DB_USERNAME=jenlav/" .env
+                    sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=secret/" .env
+                    php artisan cache:clear
+                    php artisan config:clear
+                '''
             }
         }
+    }
+}
     }
 
     post {
