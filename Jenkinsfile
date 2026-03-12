@@ -72,22 +72,19 @@ pipeline {
             }
         }
 
-stage('Deploy to Production') {
-    steps {
-        script {
-            sshagent(credentials: ['ssh-prod']) {
-                docker.image('alpine').inside("-u root --entrypoint= -v ${SSH_AUTH_SOCK}:/ssh-agent -e SSH_AUTH_SOCK=/ssh-agent") {
-                    sh '''
-                        apk add --no-cache rsync openssh-client
-                        mkdir -p /root/.ssh
-                        ssh-keyscan -H ''' + PROD_HOST + ''' >> /root/.ssh/known_hosts
-                        rsync -rav --delete ./ ubuntu@''' + PROD_HOST + ''':/var/www/html/ --exclude=.env --exclude=storage --exclude=.git
-                    '''
+        stage('Deploy to Production') {
+            steps {
+                script {
+                    docker.image('instrumentisto/rsync').inside('-u root --entrypoint=') {
+                        sshagent(credentials: ['ssh-prod']) {
+                            sh 'mkdir -p ~/.ssh'
+                            sh "ssh-keyscan -H ${PROD_HOST} > ~/.ssh/known_hosts"
+                            sh "rsync -rav --delete ./ ubuntu@${PROD_HOST}:/var/www/html/ --exclude=.env --exclude=storage --exclude=.git"
+                        }
+                    }
                 }
             }
         }
-    }
-}
     }
 
     post {
