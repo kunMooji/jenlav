@@ -72,11 +72,11 @@ pipeline {
             }
         }
 
-  stage('Deploy to Production') {
+stage('Deploy to Production') {
     steps {
         script {
-            docker.image('alpine').inside('-u root --entrypoint=') {
-                sshagent(credentials: ['ssh-prod']) {
+            sshagent(credentials: ['ssh-prod']) {
+                docker.image('alpine').inside('-u root --entrypoint=') {
                     sh 'apk add --no-cache rsync openssh-client'
                     sh 'mkdir -p ~/.ssh'
                     sh "ssh-keyscan -H ${PROD_HOST} > ~/.ssh/known_hosts"
