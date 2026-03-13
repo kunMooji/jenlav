@@ -4,6 +4,7 @@ pipeline {
     environment {
         COMPOSER_IMAGE = 'composer:2'
         PHP_IMAGE = 'php:8.2-cli'
+        PROD_HOST = '192.168.172.39'
     }
 
     stages {
@@ -54,22 +55,37 @@ pipeline {
             }
         }
 
- stage('Cache Clear') {
-    steps {
-        script {
-            docker.image('laravelphp/vapor:php82').inside('-u root --entrypoint= --network jenkins-net') {
-                sh '''
-                    sed -i "s/DB_HOST=.*/DB_HOST=mysql-jenkins/" .env
-                    sed -i "s/DB_DATABASE=.*/DB_DATABASE=jenlav/" .env
-                    sed -i "s/DB_USERNAME=.*/DB_USERNAME=jenlav/" .env
-                    sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=secret/" .env
-                    php artisan cache:clear
-                    php artisan config:clear
-                '''
+        stage('Cache Clear') {
+            steps {
+                script {
+                    docker.image('laravelphp/vapor:php82').inside('-u root --entrypoint= --network jenkins-net') {
+                        sh '''
+                            sed -i "s/DB_HOST=.*/DB_HOST=mysql-jenkins/" .env
+                            sed -i "s/DB_DATABASE=.*/DB_DATABASE=jenlav/" .env
+                            sed -i "s/DB_USERNAME=.*/DB_USERNAME=jenlav/" .env
+                            sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=secret/" .env
+                            php artisan cache:clear
+                            php artisan config:clear
+                        '''
+                    }
+                }
             }
         }
-    }
-}
+
+        stage('Deploy to Production') {
+            steps {
+                script {
+                    docker.image('agung3wi/alpine-rsync:1.1').inside('-u root') {
+                        sshagent(credentials: ['ssh-prod']) {
+                            sh 'mkdir -p ~/.ssh'
+                            sh 'ssh-keyscan -H "$PROD_HOST" > ~/.ssh/known_hosts'
+                            sh "rsync -rav --delete ./laravel/ ubuntu@$PROD_HOST:/home/ubuntu/prod.kelasdevops.xyz/ --exclude=.env --exclude=storage --exclude=.git"
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
     post {
