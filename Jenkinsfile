@@ -75,7 +75,7 @@ pipeline {
         stage('Deploy to Production') {
             steps {
                 script {
-                    docker.image('instrumentisto/rsync').inside('-u root --entrypoint=') {
+                    docker.image('eeacms/rsync').inside('-u root --entrypoint=') {
                         sshagent(credentials: ['ssh-prod']) {
                             sh 'mkdir -p ~/.ssh'
                             sh "ssh-keyscan -H ${PROD_HOST} > ~/.ssh/known_hosts"
