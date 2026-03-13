@@ -76,7 +76,7 @@ pipeline {
             steps {
                 script {
                     docker.image('eeacms/rsync').inside('-u root --entrypoint=') {
-                        sshagent(credentials: ['prod_key1']) {
+                        sshagent(credentials: ['ssh-prod']) {
                             sh 'mkdir -p ~/.ssh'
                             sh "ssh-keyscan -H ${PROD_HOST} > ~/.ssh/known_hosts"
                             sh "rsync -rav --delete ./ ubuntu@${PROD_HOST}:/var/www/html/ --exclude=.env --exclude=storage --exclude=.git"
