@@ -79,7 +79,7 @@ stage('Deploy to Production') {
                 sshagent(credentials: ['ssh-prod']) {
                     sh 'mkdir -p ~/.ssh'
                     sh 'ssh-keyscan -H "$PROD_HOST" > ~/.ssh/known_hosts'
-                    sh "rsync -rav --delete ./laravel/ briliaansmh@$PROD_HOST:/home/briliaansmh/prod.kelasdevops.xyz/ --exclude=.env --exclude=storage --exclude=.git"
+                    sh "rsync -rav --delete ./ briliaansmh@$PROD_HOST:/home/briliaansmh/prod.kelasdevops.xyz/ --exclude=.env --exclude=storage --exclude=.git"
                 }
             }
         }
