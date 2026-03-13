@@ -4,7 +4,6 @@ pipeline {
     environment {
         COMPOSER_IMAGE = 'composer:2'
         PHP_IMAGE = 'php:8.2-cli'
-        PROD_HOST = '192.168.172.39'
     }
 
     stages {
@@ -55,45 +54,22 @@ pipeline {
             }
         }
 
-        stage('Cache Clear') {
-            steps {
-                script {
-                    docker.image('laravelphp/vapor:php82').inside('-u root --entrypoint= --network jenkins-net') {
-                        sh '''
-                            sed -i "s/DB_HOST=.*/DB_HOST=mysql-jenkins/" .env
-                            sed -i "s/DB_DATABASE=.*/DB_DATABASE=jenlav/" .env
-                            sed -i "s/DB_USERNAME=.*/DB_USERNAME=jenlav/" .env
-                            sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=secret/" .env
-                            php artisan cache:clear
-                            php artisan config:clear
-                        '''
-                    }
-                }
+ stage('Cache Clear') {
+    steps {
+        script {
+            docker.image('laravelphp/vapor:php82').inside('-u root --entrypoint= --network jenkins-net') {
+                sh '''
+                    sed -i "s/DB_HOST=.*/DB_HOST=mysql-jenkins/" .env
+                    sed -i "s/DB_DATABASE=.*/DB_DATABASE=jenlav/" .env
+                    sed -i "s/DB_USERNAME=.*/DB_USERNAME=jenlav/" .env
+                    sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=secret/" .env
+                    php artisan cache:clear
+                    php artisan config:clear
+                '''
             }
         }
-
-        stage('Deploy to Production') {
-            steps {
-                script {
-                    docker.image('eeacms/rsync').inside('-u root --entrypoint=') {
-                        sshagent(credentials: ['prod_key1']) {
-                            sh """
-                                mkdir -p ~/.ssh
-                                ssh-keyscan -H ${PROD_HOST} >> ~/.ssh/known_hosts
-                                rsync -avz --delete \
-                                    --exclude='.git' \
-                                    --exclude='.env' \
-                                    --exclude='node_modules' \
-                                    --exclude='storage/logs' \
-                                    ./ ubuntu@${PROD_HOST}:/var/www/jenlav/
-                                ssh ubuntu@${PROD_HOST} 'cd /var/www/jenlav && php artisan migrate --force && php artisan config:cache && php artisan cache:clear'
-                            """
-                        }
-                    }
-                }
-            }
-        }
-
+    }
+}
     }
 
     post {
