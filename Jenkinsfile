@@ -76,7 +76,7 @@ pipeline {
             steps {
                 script {
                     docker.image('eeacms/rsync').inside('-u root --entrypoint=') {
-                        sshagent(credentials: ['ubuntu']) {
+                        sshagent(credentials: ['prod_key1']) {
                             sh """
                                 mkdir -p ~/.ssh
                                 ssh-keyscan -H ${PROD_HOST} >> ~/.ssh/known_hosts
